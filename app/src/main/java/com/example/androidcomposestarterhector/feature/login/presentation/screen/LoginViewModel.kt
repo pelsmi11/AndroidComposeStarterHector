@@ -3,6 +3,7 @@ package com.example.androidcomposestarterhector.feature.login.presentation.scree
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidcomposestarterhector.core.ui.components.model.ErrorStatus
+import com.example.androidcomposestarterhector.feature.login.data.repository.LoginRepository
 import com.example.androidcomposestarterhector.feature.login.domain.usecase.ValidateEmailUseCase
 import com.example.androidcomposestarterhector.feature.login.domain.usecase.ValidatePasswordUseCase
 import com.example.androidcomposestarterhector.feature.login.presentation.screen.model.LoginFormState
@@ -15,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val validateEmailUseCase: ValidateEmailUseCase,
-    private val validatePasswordUseCase: ValidatePasswordUseCase
+    private val validatePasswordUseCase: ValidatePasswordUseCase,
+    private val loginRepository: LoginRepository // <-- inyectamos el repo
     // inyección de repositorios, etc., si lo requieres
 ) : ViewModel() {
 
@@ -100,11 +102,31 @@ class LoginViewModel @Inject constructor(
 
         // 4) Verificamos si hay errores: si no, continuamos con “login remoto”
         if (!newEmailError.isError && !newPasswordError.isError) {
+            // Activamos loading
+            _formState.value = _formState.value.copy(isLoadingAuth = true)
             // Login remoto
             viewModelScope.launch {
-                // ... Llamada a backend ...
-                // Si la autenticación fue exitosa => emitir un evento de navegación
-                _uiEvent.value = LoginUiEvent.NavigateHome
+                try {
+                    val response = loginRepository.login(
+                        username = current.emailField.value,
+                        password = current.passwordField.value
+                    )
+                    // `response` es un LoginApiResponse(jwt, duration)
+
+                    // Si quieres guardar el token, etc.
+                    // ...
+
+                    // Emite evento de navegación
+                    _uiEvent.value = LoginUiEvent.NavigateHome
+
+                } catch (e: Exception) {
+                    // Manejar error de red o servidor
+                    // Ejemplo: emitir un evento de error
+                    _uiEvent.value = LoginUiEvent.ShowError("Error: ${e.message}")
+                } finally {
+                    // Quitar loading
+                    _formState.value = _formState.value.copy(isLoadingAuth = false)
+                }
             }
         }
     }
@@ -115,5 +137,6 @@ class LoginViewModel @Inject constructor(
 
 sealed class LoginUiEvent {
     object NavigateHome : LoginUiEvent()
+    data class ShowError(val message: String) : LoginUiEvent()
     // Podrías agregar otros eventos (MostrarSnackBar, etc.)
 }

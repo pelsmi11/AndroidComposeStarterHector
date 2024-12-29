@@ -8,4 +8,5 @@ data class LoginFormState(
     val emailError: ErrorStatus = ErrorStatus.noError(),
     val passwordField: FieldInput = FieldInput(value = "", hasInteracted = false),
     val passwordError: ErrorStatus = ErrorStatus.noError(),
+    val isLoadingAuth: Boolean = false
 )
