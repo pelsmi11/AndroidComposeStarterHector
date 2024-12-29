@@ -2,6 +2,7 @@ package com.example.androidcomposestarterhector.feature.login.presentation.scree
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.androidcomposestarterhector.core.data.TokenManager
 import com.example.androidcomposestarterhector.core.ui.components.model.ErrorStatus
 import com.example.androidcomposestarterhector.feature.login.data.repository.LoginRepository
 import com.example.androidcomposestarterhector.feature.login.domain.usecase.ValidateEmailUseCase
@@ -17,8 +18,8 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val validateEmailUseCase: ValidateEmailUseCase,
     private val validatePasswordUseCase: ValidatePasswordUseCase,
-    private val loginRepository: LoginRepository // <-- inyectamos el repo
-    // inyección de repositorios, etc., si lo requieres
+    private val loginRepository: LoginRepository ,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
 
@@ -111,11 +112,8 @@ class LoginViewModel @Inject constructor(
                         username = current.emailField.value,
                         password = current.passwordField.value
                     )
-                    // `response` es un LoginApiResponse(jwt, duration)
-
-                    // Si quieres guardar el token, etc.
-                    // ...
-
+                    // Guardar el token en EncryptedSharedPreferences
+                    tokenManager.saveToken(response.jwt)
                     // Emite evento de navegación
                     _uiEvent.value = LoginUiEvent.NavigateHome
 
